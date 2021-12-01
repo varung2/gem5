@@ -1,7 +1,4 @@
 #include "mem/cache/prefetch/dspatch.hh"
-#include "debug/HWPrefetch.hh"
-#include "mem/physical.hh"
-
 #include "params/DSPatchPrefetcher.hh"
 
 #include <assert.h>
@@ -420,10 +417,19 @@ namespace prefetch {
 	}
 
 	uint8_t DSPatch::getMemoryBandwidth() {
-		// memory::PhysicalMemory pmem = cache->system->getPhysMem();
-		// for (size_t pmem_idx = 0; pmem_idx < pmem.memories.size(); pmem_idx++) {
-		// 	pmem.memories[pmem_idx].stats
-		// }
+		System* sys = cache->system;
+		double total_bw = 0;
+		for (size_t pmem_idx = 0; pmem_idx < sys->getPhysMem().memories.size(); pmem_idx++) {
+			statistics::VResult rvec;
+			sys->getPhysMem().memories[pmem_idx]->stats.bwTotal.result(rvec);
+			for (size_t ridx = 0; ridx < rvec.size(); ridx++) {
+				// double bw_val = rvec[ridx].getValue();
+				double bw_val = rvec[ridx];
+				std::cout << "DEBUG: pmem_idx = " << pmem_idx << " | ridx = " << ridx << " | bw_val = " << bw_val << std::endl;
+				total_bw += bw_val;
+			}
+		}
+		std::cout << "DEBUG: finished calculating total bw consumed => " << total_bw << std::endl;
 		return bw_bucket;
 	}
 

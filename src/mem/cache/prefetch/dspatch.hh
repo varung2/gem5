@@ -2,8 +2,14 @@
 #ifndef __MEM_CACHE_PREFETCH_DSPATCH_HH__
 #define __MEM_CACHE_PREFETCH_DSPATCH_HH__
 
+#include "mem/physical.hh"
+#include "mem/abstract_mem.hh"
 #include "mem/cache/prefetch/queued.hh"
-#include "sim/stats.hh" // used for estimating bw utilization info
+#include "mem/cache/base.hh"
+#include "base/stats/types.hh"
+// #include "sim/stats.hh" // used for estimating bw utilization info
+#include "debug/HWPrefetch.hh"
+
 #include <vector>
 #include <deque>
 #include <limits.h>
@@ -13,6 +19,8 @@
 #define LOG2_BLOCK_SIZE 6
 
 namespace gem5 {
+
+class BaseCache;
 
 struct DSPatchPrefetcherParams;
 
@@ -207,9 +215,9 @@ class DSPatch : public Queued {
 		const uint32_t dspatch_measure_accP_max;
 		const uint32_t dspatch_acc_thr;
 		const uint32_t dspatch_cov_thr;
-		const bool     dspatch_enable_pref_buffer;
 		const uint32_t dspatch_pref_buffer_size;
 		const uint32_t dspatch_pref_degree;
+		const bool     dspatch_enable_pref_buffer;
 
 	private:
 		DSPatch_pref_candidate select_bitmap(DSPatch_SPTEntry *sptentry, Bitmap &bmp_selected);

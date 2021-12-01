@@ -170,6 +170,7 @@ class AbstractMemory : public ClockedObject
      */
     System *_system;
 
+    public:
     struct MemStats : public statistics::Group
     {
         MemStats(AbstractMemory &mem);
