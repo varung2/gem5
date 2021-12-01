@@ -443,6 +443,28 @@ class BOPPrefetcher(QueuedPrefetcher):
                 "Cycles to delay a write in the left RR table from the delay \
                 queue")
 
+class DSPatchPrefetcher(QueuedPrefetcher):
+    type = "DSPatchPrefetcher"
+    cxx_class = 'gem5::prefetch::DSPatch'
+    cxx_header = "mem/cache/prefetch/dspatch.hh"
+    log2_region_size = Param.Unsigned(11)
+    num_cachelines_in_region = Param.Unsigned(64) 
+    pb_size = Param.Unsigned(64)
+    num_spt_entries = Param.Unsigned(256)
+    compression_granularity = Param.Unsigned(2)
+    pred_throttle_bw_thr = Param.Unsigned(3)
+    bitmap_selection_policy = Param.Unsigned(3)
+    sig_type = Param.Unsigned(1)
+    sig_hash_type = Param.Unsigned(2)
+    or_count_max = Param.Unsigned(3)
+    measure_covP_max = Param.Unsigned(3)
+    measure_accP_max = Param.Unsigned(3)
+    acc_thr = Param.Unsigned(50)
+    cov_thr = Param.Unsigned(50)
+    pref_buffer_size = Param.Unsigned(256) 
+    pref_degree = Param.Unsigned(4) 
+    enable_pref_buffer = Param.Bool(True)
+
 class SBOOEPrefetcher(QueuedPrefetcher):
     type = 'SBOOEPrefetcher'
     cxx_class = 'gem5::prefetch::SBOOE'
