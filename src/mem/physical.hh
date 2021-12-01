@@ -121,9 +121,10 @@ class BackingStoreEntry
  */
 class PhysicalMemory : public Serializable
 {
+    public:
+        std::vector<AbstractMemory*> memories;
 
   private:
-
     // Name for debugging
     std::string _name;
 
@@ -131,7 +132,6 @@ class PhysicalMemory : public Serializable
     AddrRangeMap<AbstractMemory*, 1> addrMap;
 
     // All address-mapped memories
-    std::vector<AbstractMemory*> memories;
 
     // The total memory size
     uint64_t size;
