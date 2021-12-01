@@ -1,12 +1,14 @@
 #include "mem/cache/prefetch/dspatch.hh"
 #include "params/DSPatchPrefetcher.hh"
 
-#include <assert.h>
 #include <sstream>
-#include <algorithm>
 #include <iomanip>
 #include <cassert>
+#include <assert.h>
 #include <iostream>
+#include <algorithm>
+
+#define TICKS_PER_SECOND 1e+12
 
 namespace gem5 {
 
@@ -397,9 +399,8 @@ namespace prefetch {
 		// 2400MHz (clks/sec) * 2 transfers/clk (DDR) * buswidth (bits) / 8 bits * # interfaces (i.e., dual-channel)
 		// = Max throughput in Bytes/second 
 		dram__max_calculated_bw(2400000000*2* ((4*16) >> 3) * 2),
-		last_total_bytes_consumed(0),
-		last_sim_seconds(0),
-		mem_percentage_bw_used(0)
+		last_num_bytes_consumed(std::vector<double>(1, 0)),
+		last_tick(std::vector<Tick>(1, 0))
 		{ 
 
 		assert(dspatch_log2_region_size <= 12);
@@ -412,7 +413,7 @@ namespace prefetch {
 			spt[index] = new DSPatch_SPTEntry();
 		}
 
-		std::cout << "DEBUG: max calculated bw of memory = " << dram__max_calculated_bw << std::endl;
+		// std::cout << "DEBUG: max calculated bw of memory = " << dram__max_calculated_bw << std::endl;
 	}
 	DSPatch::~DSPatch() {
 		for(uint32_t index = 0; index < dspatch_num_spt_entries; ++index) {
@@ -469,12 +470,32 @@ namespace prefetch {
 		System* sys = cache->system;
 		double bus_utilization = 0;
 		uint32_t dram_count = 0;
+
+		// loop through memories
 		for (size_t pmem_idx = 0; pmem_idx < sys->getPhysMem().memories.size(); pmem_idx++) {
 			const memory::DRAMInterface* dram = dynamic_cast<memory::DRAMInterface*>(sys->getPhysMem().memories[pmem_idx]);
 
 			// can use embedded stats from the DRAMInterface class
 			if (dram) {
-				bus_utilization += dram->stats.busUtil.total();
+				// update vector sizes 
+				// (update works like this because we assume that memory is not dynamically attached to the system during runtime)
+				if (dram_count >= last_num_bytes_consumed.size())
+					last_num_bytes_consumed.push_back(0);
+				if (dram_count >= last_tick.size())
+					last_tick.push_back(0);
+
+				// calculate bw utilization using delta values
+				double max_bw = dram->stats.peakBW.total();
+				uint64_t bytes_consumed = (dram->stats.bytesRead.total() + dram->stats.bytesWritten.total());
+				double delta_bytes = bytes_consumed - last_num_bytes_consumed[dram_count];
+				double delta_t = double(curTick() - last_tick[dram_count]) / double(TICKS_PER_SECOND);
+				bus_utilization += ((delta_bytes / delta_t) / max_bw);
+
+				//update the last values
+				last_tick[dram_count] = curTick();
+				last_num_bytes_consumed[dram_count] = bytes_consumed;
+
+				//inc dram count
 				dram_count++;
 			} 
 			// memory type isn't of DRAMInterface... some other memory or device memory... don't factor in bw calculation
@@ -515,23 +536,23 @@ namespace prefetch {
 		auto it = find_if(page_buffer.begin(), page_buffer.end(), [page](DSPatch_PBEntry *pbentry){return pbentry->page == page;});
 		return it != page_buffer.end() ? (*it) : NULL;
 	}
-	void DSPatch::buffer_prefetch(std::vector<uint64_t> pref_addr) {
-		uint32_t count = 0;
-		for(uint32_t index = 0; index < pref_addr.size(); ++index) {
-			if(pref_buffer.size() >= dspatch_pref_buffer_size)
-				break;
-			pref_buffer.push_back(pref_addr[index]);
-			count++;
-		}
-	}
-	void DSPatch::issue_prefetch(std::vector<uint64_t> &pref_addr) {
-		uint32_t count = 0;
-		while(!pref_buffer.empty() && count < dspatch_pref_degree) {
-			pref_addr.push_back(pref_buffer.front());
-			pref_buffer.pop_front();
-			count++;
-		}
-	}
+	// void DSPatch::buffer_prefetch(std::vector<uint64_t> pref_addr) {
+	// 	uint32_t count = 0;
+	// 	for(uint32_t index = 0; index < pref_addr.size(); ++index) {
+	// 		if(pref_buffer.size() >= dspatch_pref_buffer_size)
+	// 			break;
+	// 		pref_buffer.push_back(pref_addr[index]);
+	// 		count++;
+	// 	}
+	// }
+	// void DSPatch::issue_prefetch(std::vector<uint64_t> &pref_addr) {
+	// 	uint32_t count = 0;
+	// 	while(!pref_buffer.empty() && count < dspatch_pref_degree) {
+	// 		pref_addr.push_back(pref_buffer.front());
+	// 		pref_buffer.pop_front();
+	// 		count++;
+	// 	}
+	// }
 	uint32_t DSPatch::get_spt_index(uint64_t signature) {
 		uint32_t folded_sig = folded_xor(signature, 2);
 		/* apply hash */

@@ -2,12 +2,11 @@
 #ifndef __MEM_CACHE_PREFETCH_DSPATCH_HH__
 #define __MEM_CACHE_PREFETCH_DSPATCH_HH__
 
-// #include "mem/physical.hh"
-#include "mem/mem_interface.hh"
-#include "mem/cache/prefetch/queued.hh"
-#include "mem/cache/base.hh"
 #include "base/stats/types.hh"
-// #include "sim/stats.hh" // used for estimating bw utilization info
+#include "mem/mem_interface.hh"
+#include "mem/cache/base.hh"
+#include "mem/cache/prefetch/queued.hh"
+
 #include "debug/HWPrefetch.hh"
 
 #include <vector>
@@ -19,8 +18,6 @@
 #define LOG2_BLOCK_SIZE 6
 
 namespace gem5 {
-
-// class BaseCache;
 
 struct DSPatchPrefetcherParams;
 
@@ -184,9 +181,9 @@ class DSPatch : public Queued {
 
 		// vars for calculating BW
 		const uint64_t dram__max_calculated_bw;
-		double last_total_bytes_consumed;
-		double last_sim_seconds;
-		double mem_percentage_bw_used;
+
+		std::vector<double> last_num_bytes_consumed;
+		std::vector<Tick> last_tick;
 
 		/* 0 => b/w is less than 25% of peak
 		 * 1 => b/w is more than 25% and less than 50% of peak
@@ -218,9 +215,9 @@ class DSPatch : public Queued {
 		DSPatch_pref_candidate select_bitmap(DSPatch_SPTEntry *sptentry, Bitmap &bmp_selected);
 		DSPatch_PBEntry* search_pb(uint64_t page);
 		
-		// not sure what these do...
-		void buffer_prefetch(std::vector<uint64_t> pref_addr);
-		void issue_prefetch(std::vector<uint64_t> &pref_addr);
+		// these functions are not neccessary (we don't buffer prefetches)
+		// void buffer_prefetch(std::vector<uint64_t> pref_addr);
+		// void issue_prefetch(std::vector<uint64_t> &pref_addr);
 
 		uint32_t get_spt_index(uint64_t signature);
 		uint32_t get_hash(uint32_t key);
