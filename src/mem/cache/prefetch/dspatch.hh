@@ -2,8 +2,8 @@
 #ifndef __MEM_CACHE_PREFETCH_DSPATCH_HH__
 #define __MEM_CACHE_PREFETCH_DSPATCH_HH__
 
-#include "mem/physical.hh"
-#include "mem/abstract_mem.hh"
+// #include "mem/physical.hh"
+#include "mem/mem_interface.hh"
 #include "mem/cache/prefetch/queued.hh"
 #include "mem/cache/base.hh"
 #include "base/stats/types.hh"
@@ -20,7 +20,7 @@
 
 namespace gem5 {
 
-class BaseCache;
+// class BaseCache;
 
 struct DSPatchPrefetcherParams;
 
@@ -183,14 +183,9 @@ class DSPatch : public Queued {
 		std::deque<Addr> pref_buffer;
 
 		// vars for calculating BW
-		// statistics::Vector last_membytesConsumed;
-		// statistics::Vector last_membytesConsumed;
-
-		// const uint32_t dram__freq; 			//in MHz
-		// const uint32_t dram__bus_width;		//in Bits
 		const uint64_t dram__max_calculated_bw;
-		double mem_total_bw;
-		double mem_total_consumed_bw;
+		double last_total_bytes_consumed;
+		double last_sim_seconds;
 		double mem_percentage_bw_used;
 
 		/* 0 => b/w is less than 25% of peak
@@ -233,7 +228,7 @@ class DSPatch : public Queued {
 		DSPatch_pref_candidate dyn_selection(DSPatch_SPTEntry *sptentry, Bitmap &bmp_selected);
 		void generate_prefetch(uint64_t pc, uint64_t page, uint32_t offset, uint64_t address, std::vector<uint64_t> &pref_addr);
 
-		uint8_t getMemoryBandwidth();
+		uint8_t calculateBWBucket();
 
 	public:
 		DSPatch(const DSPatchPrefetcherParams &p);
@@ -249,3 +244,29 @@ class DSPatch : public Queued {
 
 
 #endif//__MEM_CACHE_PREFETCH_DSPATCH_HH__
+
+
+// OLD CODE
+	// inside DSPatch::getMemoryBandwidth()
+	// statistics::VResult rvec;
+	// // sys->getPhysMem().memories[pmem_idx].stats.bwTotal.result(rvec);
+	// simSeconds.result(rvec);
+	// statistics::VResult rvec;
+	// double bytesRead = sys->getPhysMem().memories[pmem_idx]->stats.bytesRead.total();
+	// double bytesWritten = sys->getPhysMem().memories[pmem_idx]->stats.bytesWritten.total();
+	// last_sim_seconds = simSeconds; // -> gives error 
+	/* build/ARM/mem/cache/prefetch/dspatch.cc:428:23: error: cannot convert 'gem5::statistics::Formula' to 'double' in assignment
+		  428 |    last_sim_seconds = simSeconds;
+		      |                       ^~~~~~~~~~
+		      |                       |
+		      |                       gem5::statistics::Formula 
+	*/
+
+
+	// for (size_t ridx = 0; ridx < rvec.size(); ridx++) {
+	// 	// double bw_val = rvec[ridx].getValue();
+	// 	double bw_val = rvec[ridx];
+	// 	std::cout << "DEBUG: pmem_idx = " << pmem_idx << " | ridx = " << ridx << " | bw_val = " << bw_val << std::endl;
+	// 	bus_utilization += bw_val;
+	// }
+	// std::cout << "DEBUG: pmem_idx = " << pmem_idx << " | bytesRead = " << bytesRead << " | bytesWritten = " << bytesWritten << std::endl;

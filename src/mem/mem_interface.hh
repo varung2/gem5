@@ -854,7 +854,10 @@ class DRAMInterface : public MemInterface
         statistics::Formula pageHitRate;
     };
 
-    DRAMStats stats;
+    public:
+        DRAMStats stats;
+    
+    private:
 
     /**
       * Vector of dram ranks

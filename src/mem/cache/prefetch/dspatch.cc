@@ -372,6 +372,7 @@ namespace prefetch {
 		return DSPatch_pref_candidate_string[(uint32_t)candidate];
 	}
 
+// Public functions
 	DSPatch::DSPatch(const DSPatchPrefetcherParams &p) :
 		Queued(p),
 		dspatch_log2_region_size(p.log2_region_size),
@@ -395,7 +396,10 @@ namespace prefetch {
 		// dram__bus_width(4*16),
 		// 2400MHz (clks/sec) * 2 transfers/clk (DDR) * buswidth (bits) / 8 bits * # interfaces (i.e., dual-channel)
 		// = Max throughput in Bytes/second 
-		dram__max_calculated_bw(2400000000*2* ((4*16) >> 3) * 2) 
+		dram__max_calculated_bw(2400000000*2* ((4*16) >> 3) * 2),
+		last_total_bytes_consumed(0),
+		last_sim_seconds(0),
+		mem_percentage_bw_used(0)
 		{ 
 
 		assert(dspatch_log2_region_size <= 12);
@@ -407,32 +411,15 @@ namespace prefetch {
 		for(uint32_t index = 0; index < dspatch_num_spt_entries; ++index) {
 			spt[index] = new DSPatch_SPTEntry();
 		}
-	}
 
+		std::cout << "DEBUG: max calculated bw of memory = " << dram__max_calculated_bw << std::endl;
+	}
 	DSPatch::~DSPatch() {
 		for(uint32_t index = 0; index < dspatch_num_spt_entries; ++index) {
 			delete spt[index];
 		}
 		free(spt);
 	}
-
-	uint8_t DSPatch::getMemoryBandwidth() {
-		System* sys = cache->system;
-		double total_bw = 0;
-		for (size_t pmem_idx = 0; pmem_idx < sys->getPhysMem().memories.size(); pmem_idx++) {
-			statistics::VResult rvec;
-			sys->getPhysMem().memories[pmem_idx]->stats.bwTotal.result(rvec);
-			for (size_t ridx = 0; ridx < rvec.size(); ridx++) {
-				// double bw_val = rvec[ridx].getValue();
-				double bw_val = rvec[ridx];
-				std::cout << "DEBUG: pmem_idx = " << pmem_idx << " | ridx = " << ridx << " | bw_val = " << bw_val << std::endl;
-				total_bw += bw_val;
-			}
-		}
-		std::cout << "DEBUG: finished calculating total bw consumed => " << total_bw << std::endl;
-		return bw_bucket;
-	}
-
 	void DSPatch::calculatePrefetch(const PrefetchInfo &pfi, std::vector<AddrPriority> &addresses) {
 		Addr address = pfi.getAddr();
 		uint64_t page = address >> dspatch_log2_region_size;
@@ -441,7 +428,7 @@ namespace prefetch {
 		if (!pfi.hasPC()) return; // if pc is not valid, return from calculate prefetch
 		Addr pc = pfi.getPC();
 
-		bw_bucket = getMemoryBandwidth();
+		bw_bucket = calculateBWBucket();
 
 		// search page buffer for page
 		DSPatch_PBEntry *pbentry = NULL;
@@ -475,10 +462,32 @@ namespace prefetch {
 			Addr address = Addr(pref_addr[i]);
 			addresses.push_back(AddrPriority(address, i));
 		}
-
 	}
 
+// Private functions
+	uint8_t DSPatch::calculateBWBucket() {
+		System* sys = cache->system;
+		double bus_utilization = 0;
+		uint32_t dram_count = 0;
+		for (size_t pmem_idx = 0; pmem_idx < sys->getPhysMem().memories.size(); pmem_idx++) {
+			const memory::DRAMInterface* dram = dynamic_cast<memory::DRAMInterface*>(sys->getPhysMem().memories[pmem_idx]);
 
+			// can use embedded stats from the DRAMInterface class
+			if (dram) {
+				bus_utilization += dram->stats.busUtil.total();
+				dram_count++;
+			} 
+			// memory type isn't of DRAMInterface... some other memory or device memory... don't factor in bw calculation
+			// Note if using other types of memories, this code needs to be modified
+		}
+		bus_utilization /= dram_count;
+		uint8_t calc_bw_bucket = uint8_t(bus_utilization/0.25);
+		calc_bw_bucket = (calc_bw_bucket < 3) ? calc_bw_bucket : 3;
+		
+		std::cout << "DEBUG: finished calculating avg bus utilization => " << bus_utilization << std::endl;
+		std::cout << "DEBUG: finished calculating bw bucket => " << calc_bw_bucket << std::endl;
+		return calc_bw_bucket;
+	}
 	DSPatch_pref_candidate DSPatch::select_bitmap(DSPatch_SPTEntry *sptentry, Bitmap &bmp_selected) {
 		DSPatch_pref_candidate candidate = DSPatch_pref_candidate::NONE;
 		switch(dspatch_bitmap_selection_policy) {
