@@ -47,3 +47,15 @@ Source('spatio_temporal_memory_streaming.cc')
 Source('stride.cc')
 Source('tagged.cc')
 Source('dspatch.cc')
+
+# pythia helpers
+Source('ini.cc')
+Source('knobs.cc')
+Source('util.cc')
+Source('feature_knowledge.cc')
+Source('learning_engine_base.cc')
+Source('learning_engine_basic.cc')
+Source('learning_engine_featurewise.cc')
+Source('scooby_helper.cc')
+# pythia prefetcher
+Source('pythia.cc')

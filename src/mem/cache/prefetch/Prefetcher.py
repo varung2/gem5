@@ -465,6 +465,11 @@ class DSPatchPrefetcher(QueuedPrefetcher):
     pref_degree = Param.Unsigned(4, "") 
     enable_pref_buffer = Param.Bool(True, "")
 
+class PythiaPrefetcher(QueuedPrefetcher):
+    type = "PythiaPrefetcher"
+    cxx_class = 'gem5::prefetch::Pythia'
+    cxx_header = "mem/cache/prefetch/pythia.hh"
+
 class SBOOEPrefetcher(QueuedPrefetcher):
     type = 'SBOOEPrefetcher'
     cxx_class = 'gem5::prefetch::SBOOE'

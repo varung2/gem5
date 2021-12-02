@@ -2,15 +2,15 @@
 #ifndef __MEM_CACHE_PREFETCH_DSPATCH_HH__
 #define __MEM_CACHE_PREFETCH_DSPATCH_HH__
 
-#include "base/stats/types.hh"
-#include "mem/mem_interface.hh"
 #include "mem/cache/base.hh"
+#include "base/stats/types.hh"
+#include "debug/HWPrefetch.hh"
+#include "mem/mem_interface.hh"
 #include "mem/cache/prefetch/queued.hh"
 
-#include "debug/HWPrefetch.hh"
 
-#include <vector>
 #include <deque>
+#include <vector>
 #include <limits.h>
 
 // cache parameters - assume these are true
