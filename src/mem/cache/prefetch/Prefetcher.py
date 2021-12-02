@@ -554,3 +554,15 @@ class PIFPrefetcher(QueuedPrefetcher):
         if not isinstance(simObj, SimObject):
             raise TypeError("argument must be of SimObject type")
         self.addEvent(HWPProbeEventRetiredInsts(self, simObj,"RetiredInstsPC"))
+
+class SandboxPrefetcher(QueuedPrefetcher):
+    type = "SandboxPrefetcher"
+    cxx_class = 'gem5::prefetch::Sandbox'
+    cxx_header = "mem/cache/prefetch/sandbox.hh"
+    sandbox_pref_degree =  Param.Unsigned(4, "") 
+    sandbox_enable_stream_detect = Param.Bool(True,"")
+    sandbox_stream_detect_length = Param.Unsigned(3,"")
+    sandbox_num_access_in_phase = Param.Unsigned(256,"")
+    sandbox_num_cycle_offsets = Param.Unsigned(4,"")
+    sandbox_bloom_filter_size = Param.Unsigned(2048,"")
+    sandbox_seed = Param.Unsigned(300,"")
