@@ -505,8 +505,8 @@ namespace prefetch {
 		uint8_t calc_bw_bucket = uint8_t(bus_utilization/0.25);
 		calc_bw_bucket = (calc_bw_bucket < 3) ? calc_bw_bucket : 3;
 		
-		std::cout << "DEBUG: finished calculating avg bus utilization => " << bus_utilization << std::endl;
-		std::cout << "DEBUG: finished calculating bw bucket => " << calc_bw_bucket << std::endl;
+		// std::cout << "DEBUG: finished calculating avg bus utilization => " << bus_utilization << std::endl;
+		// std::cout << "DEBUG: finished calculating bw bucket => " << calc_bw_bucket << std::endl;
 		return calc_bw_bucket;
 	}
 	DSPatch_pref_candidate DSPatch::select_bitmap(DSPatch_SPTEntry *sptentry, Bitmap &bmp_selected) {
